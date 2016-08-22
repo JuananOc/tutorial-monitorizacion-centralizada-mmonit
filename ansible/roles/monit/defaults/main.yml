@@ -1,0 +1,23 @@
+---
+# file: roles/monit/defaults/main.yml
+
+monit_mmonit_user: monit
+monit_mmonit_password: monit
+monit_mmonit_host: 192.168.33.26
+
+monit_check_services_intervals: "5"
+
+monit_process_to_check:
+    - name: nginx
+      pid: /var/run/nginx.pid
+      start_command: /etc/init.d/nginx start
+      stop_command: /etc/init.d/nginx stop
+      timeout: 10
+      terms:
+          - if failed port 80 for 2 cycles then restart
+
+monit_sender_account_email: "email@gmail.com"
+monit_sender_account_password: "password"
+
+monit_alert_recipients:
+    - email@gmail.com

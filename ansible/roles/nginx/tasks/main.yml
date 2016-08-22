@@ -1,0 +1,29 @@
+# file: /roles/nginx/tasks/main.yml
+
+- name: install nginx
+  apt:
+    name:  nginx
+    state:  present
+    update_cache: yes
+
+- name: create nginx proxy configuration
+  copy:
+    src: "virtualhost-conf"
+    dest: "/etc/nginx/sites-available/virtualhost.conf"
+  notify: restart nginx
+
+- name: create symlink to custom nginx configuration
+  file:
+   src: /etc/nginx/sites-available/virtualhost.conf
+   dest: /etc/nginx/sites-enabled/virtualhost.conf
+   state: link
+  notify: restart nginx
+
+- name: remove default configuration
+  file:
+    path: /etc/nginx/{{ item }}
+    state: absent
+  with_items:
+      - sites-available/default
+      - sites-enabled/default
+  notify: restart nginx

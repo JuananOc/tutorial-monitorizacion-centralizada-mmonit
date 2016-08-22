@@ -1,0 +1,55 @@
+---
+# file: /roles/m_monit/tasks/main.yml
+
+- name: download M/Monit
+  get_url:
+      url: "{{ m_monit_donwload_url }}"
+      dest: "/tmp/{{ m_monit_dir_tar_gz }}"
+
+- name: create file
+  file:
+      path: /opt/mmonit-3.5.1
+      state: directory
+
+- name: Download mmonit binaries
+  get_url:
+      url: "{{ m_monit_donwload_url }}"
+      dest: "/tmp/{{ m_monit_dir_tar_gz }}"
+
+# environment clause it´s necessary because of a bug with the unarchive module
+- name: extract mmonit
+  unarchive:
+      src: "/tmp/{{ m_monit_dir_tar_gz }}"
+      dest: "{{ m_monit_base_dir }}"
+      copy: no
+  environment:
+      LANG: C
+      LC_ALL: C
+      LC_MESSAGES: C
+
+- name: Add mmonit links for management version
+  file:
+      src: "{{ m_monit_base_dir }}/{{ m_monit_dirname }}"
+      dest: "{{ m_monit_base_dir }}/mmonit"
+      state: link
+      force: yes
+
+- name: Enable mmonit for management as a service
+  template:
+      src: mmonit_init
+      dest: "/etc/init.d/mmonit"
+      owner: root
+      group: root
+      mode: "0755"
+      force: yes
+
+- name: Remove unextracted mmonit
+  file:
+      path: "{{ m_monit_base_dir }}/{{ m_monit_dir_tar_gz }}"
+      state: absent
+
+- name: ensure mmonit is running and enabled as service
+  service:
+      name: "mmonit"
+      state: started
+      enabled: yes

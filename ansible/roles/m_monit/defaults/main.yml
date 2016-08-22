@@ -1,0 +1,9 @@
+---
+# file: roles/m_monit/defaults/main.yml
+
+m_monit_donwload_url: "https://mmonit.com/dist/mmonit-3.5.1-linux-x64.tar.gz"
+
+m_monit_base_dir: /opt
+
+m_monit_dirname: "mmonit-3.5.1"
+m_monit_dir_tar_gz: "{{ m_monit_dirname }}.tar.gz"

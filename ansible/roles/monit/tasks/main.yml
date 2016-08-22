@@ -1,0 +1,22 @@
+---
+# file: /roles/monit/tasks/main.yml
+
+- name: install monit
+  apt:
+      name: monit
+      state: installed
+      update_cache: yes
+
+# Is located in /etc/monit/monitrc because monit expected that the properties files are there when execute as a service
+- name: copy monit configuration
+  template:
+      src: "monitrc"
+      dest: "/etc/monit/monitrc"
+      mode: "0700"
+      force: yes
+  notify: restart monit
+
+- name: ensure monit is monit enabled
+  service:
+    name: monit
+    state: started

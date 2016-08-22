@@ -1,0 +1,65 @@
+## Start Monit in the background (run as a daemon):
+set daemon {{ monit_check_services_intervals }}   # check services at 1-minute intervals
+    with start delay {{ monit_check_services_intervals }}   # initial delay needed for applications that restart when reboot the instance
+
+## Set syslog logging with the 'daemon' facility. If the FACILITY option is
+## omitted, Monit will use 'user' facility by default. If you want to log to
+## a standalone log file instead, specify the full path to the log file
+#
+# set logfile syslog facility log_daemon
+set logfile /var/log/monit.log
+
+## Set the location of the Monit id file which stores the unique id for the
+## Monit instance. The id is generated and stored on first Monit start. By
+## default the file is placed in $HOME/.monit.id.
+#
+# set idfile /var/.monit.id
+set idfile /var/lib/monit/id
+
+## Set the location of the Monit state file which saves monitoring states
+## on each cycle. By default the file is placed in $HOME/.monit.state. If
+## the state file is stored on a persistent filesystem, Monit will recover
+## the monitoring state across reboots. If it is on temporary filesystem, the
+## state will be lost on reboot which may be convenient in some situations.
+#
+set statefile /var/lib/monit/state
+
+# Allows Monit to store event messages if connection to M/Monit should temporarily be unavailable and retry delivery later.
+# Slots options limit how many messages can be stored.
+set eventqueue basedir /var/monit/ slots 1000
+
+# Set mail server witch sends mail
+set mailserver smtp.gmail.com port 587
+    username "{{ monit_sender_account_email }}" password "{{ monit_sender_account_password }}"
+    using tlsv1
+    with timeout 30 seconds
+
+# Access to the Web Service
+set httpd port 2812 and
+    use address localhost  # only accept connection from localhost
+    allow localhost        # allow localhost to connect to the server and
+    allow admin:monit      # require user 'admin' with password 'monit'
+
+# Set mail alert format
+set mail-format {
+     from: monit@server.com
+     subject: [ $SERVICE ] $EVENT - $DATE
+     message: This is an $ACTION: $DESCRIPTION [$SERVICE] }
+
+# Set recipients who receive the alerts
+{% for recipient in monit_alert_recipients %}
+set alert {{ recipient }}
+{% endfor %}
+
+{% for process in monit_process_to_check %}
+check process {{ process.name }} with pidfile {{ process.pid }}
+   start program = "{{ process.start_command }}" with timeout {{ process.timeout }} seconds
+   stop program = "{{ process.stop_command }}" with timeout {{ process.timeout }} seconds
+   {% for term in process.terms %}
+   {{ term }}
+   {% endfor %}
+
+{% endfor %}
+
+# Set the URL to be used by Monit for sending messages to M/Monit
+set mmonit http://{{ monit_mmonit_user }}:{{ monit_mmonit_password }}@{{ monit_mmonit_host }}:8080/collector
